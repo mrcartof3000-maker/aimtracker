@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub de jocuri</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<style>
+:root{--paper:#f3f6fb;--grid:#d6e0f0;--ink:#1d2b53;--pen:#2f5bea;--mark:#ffd84d;--ok:#1f8a4c;--bad:#c4342d;--card:#ffffffcc}
+@media (prefers-color-scheme:dark){:root{--paper:#16203a;--grid:#243256;--ink:#e8eefc;--pen:#8fb0ff;--mark:#ffd84d;--ok:#5fd08a;--bad:#ff7b72;--card:#1d2a4acc}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--ink);background-color:var(--paper);
+background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+main{max-width:720px;margin:0 auto;padding:32px 20px 60px}
+h1{font-size:2.4rem;margin:0 0 6px;letter-spacing:-.5px}
+h1 span{background:var(--mark);color:#1d2b53;padding:0 10px;border-radius:4px}
+p.sub{margin:0 0 28px;font-size:1.05rem}
+.menu{display:grid;gap:14px}
+.menu button{display:flex;align-items:center;gap:16px;text-align:left;padding:18px 20px;font:inherit;font-size:1.15rem;color:var(--ink);
+background:var(--card);border:2px solid var(--ink);border-radius:10px;cursor:pointer;box-shadow:4px 4px 0 var(--ink)}
+.menu button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--pen)}
+.menu button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.menu small{display:block;font-size:.9rem;opacity:.75;margin-top:2px}
+.ico{font-size:2rem}
+button:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
+.game{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:22px;box-shadow:4px 4px 0 var(--ink)}
+.back{font:inherit;background:none;border:none;color:var(--pen);cursor:pointer;font-size:1rem;padding:0;margin-bottom:14px;text-decoration:underline}
+h2{margin:0 0 12px}
+.msg{min-height:1.6em;font-weight:bold;margin:12px 0}
+.win{color:var(--ok)}.lose{color:var(--bad)}
+.act{font:inherit;padding:10px 18px;border:2px solid var(--ink);border-radius:8px;background:var(--mark);color:#1d2b53;font-weight:bold;cursor:pointer}
+.act:hover{background:#ffe680}
+.word{font-size:2.2rem;letter-spacing:.35em;font-family:Consolas,monospace;margin:10px 0;word-break:break-all}
+.keys{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.keys button{width:38px;height:40px;font:inherit;font-weight:bold;text-transform:uppercase;border:2px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
+.keys button:disabled{opacity:.35;cursor:default}
+.keys button.hit{background:var(--ok);color:#fff;border-color:var(--ok)}
+.keys button.miss{background:var(--bad);color:#fff;border-color:var(--bad)}
+.row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+svg.gallows{width:150px;height:170px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round}
+input[type=number]{font:inherit;font-size:1.1rem;width:110px;padding:9px;border:2px solid var(--ink);border-radius:8px;background:var(--paper);color:var(--ink)}
+.rps{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.rps button{font-size:2.4rem;width:100px;height:90px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);cursor:pointer}
+.rps button:hover{background:var(--mark)}
+.rps button small{display:block;font:inherit;font-size:.8rem;color:var(--ink)}
+.score{font-size:1.1rem}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const app = document.getElementById('app');
+const $ = (h) => { app.innerHTML = h; };
+const rnd = (n) => Math.floor(Math.random() * n);
+
+/* ---------- Meniu principal ---------- */
+function menu() {
+  $(`<h1><span>Hub</span> de jocuri</h1>
+  <p class="sub">Alege un joc.</p>
+  <div class="menu">
+    <button onclick="spanzuratoarea()"><span class="ico">🔤</span><span>Spânzurătoarea<small>Ghicește cuvântul literă cu literă</small></span></button>
+    <button onclick="ghiceste()"><span class="ico">🔢</span><span>Ghicește numărul<small>Un număr între 1 și 100</small></span></button>
+    <button onclick="rps()"><span class="ico">✂️</span><span>Piatră, hârtie, foarfecă<small>Joacă împotriva calculatorului</small></span></button>
+  </div>`);
+}
+
+/* ---------- 1. Spanzuratoarea ---------- */
+const CUVINTE = ["programare","algoritm","calculator","variabila","functie","matematica","informatica",
+  "compilator","tastatura","numar","vector","recursivitate","matrice","program","scoala","integrala","ecuatie","grafuri"];
+
+function spanzuratoarea() {
+  const cuv = CUVINTE[rnd(CUVINTE.length)];
+  const incercate = new Set();
+  let greseli = 0;
+  const MAX = 6;
+
+  function deseneaza() {
+    const p = [
+      '<circle cx="95" cy="48" r="14"/>',
+      '<line x1="95" y1="62" x2="95" y2="110"/>',
+      '<line x1="95" y1="75" x2="72" y2="95"/>',
+      '<line x1="95" y1="75" x2="118" y2="95"/>',
+      '<line x1="95" y1="110" x2="75" y2="145"/>',
+      '<line x1="95" y1="110" x2="115" y2="145"/>'
+    ];
+    return `<svg class="gallows" viewBox="0 0 150 170"><path d="M20 160H130M45 160V15H95V34"/>${p.slice(0, greseli).join('')}</svg>`;
+  }
+
+  function afiseaza() {
+    const castigat = [...cuv].every(c => incercate.has(c));
+    const pierdut = greseli >= MAX;
+    const cuvant = [...cuv].map(c => (incercate.has(c) || pierdut) ? c : '_').join(' ');
+    let taste = '';
+    for (const c of 'abcdefghijklmnopqrstuvwxyz') {
+      const stare = incercate.has(c) ? (cuv.includes(c) ? 'hit' : 'miss') : '';
+      taste += `<button class="${stare}" ${incercate.has(c) || castigat || pierdut ? 'disabled' : ''} onclick="window._lit('${c}')">${c}</button>`;
+    }
+    $(`<button class="back" onclick="menu()">← Înapoi la meniu</button>
+    <div class="game"><h2>Spânzurătoarea</h2>
+      <div class="row">${deseneaza()}
+        <div><div class="word">${cuvant}</div><div>Greșeli: ${greseli}/${MAX}</div></div></div>
+      <div class="keys">${taste}</div>
+      <div class="msg ${castigat ? 'win' : 'lose'}">${castigat ? 'Ai câștigat!' : pierdut ? 'Ai pierdut. Cuvântul era „' + cuv + '".' : ''}</div>
+      ${castigat || pierdut ? '<button class="act" onclick="spanzuratoarea()">Joc nou</button>' : ''}
+    </div>`);
+  }
+
+  window._lit = (c) => { incercate.add(c); if (!cuv.includes(c)) greseli++; afiseaza(); };
+  afiseaza();
+}
+
+/* ---------- 2. Ghiceste numarul ---------- */
+function ghiceste() {
+  const secret = rnd(100) + 1;
+  let incercari = 0, gata = false, mesaj = 'M-am gândit la un număr între 1 și 100.', clasa = '';
+
+  function afiseaza() {
+    $(`<button class="back" onclick="menu()">← Înapoi la meniu</button>
+    <div class="game"><h2>Ghicește numărul</h2>
+      <p>Încercări: ${incercari}</p>
+      ${gata ? '' : '<input type="number" id="n" min="1" max="100" autofocus> <button class="act" onclick="window._try()">Încearcă</button>'}
+      <div class="msg ${clasa}">${mesaj}</div>
+      ${gata ? '<button class="act" onclick="ghiceste()">Joc nou</button>' : ''}
+    </div>`);
+    const inp = document.getElementById('n');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._try(); }); }
+  }
+
+  window._try = () => {
+    const v = parseInt(document.getElementById('n').value, 10);
+    if (isNaN(v) || v < 1 || v > 100) { mesaj = 'Scrie un număr între 1 și 100.'; clasa = 'lose'; afiseaza(); return; }
+    incercari++;
+    if (v < secret) { mesaj = v + ' este prea mic.'; clasa = ''; }
+    else if (v > secret) { mesaj = v + ' este prea mare.'; clasa = ''; }
+    else { mesaj = 'Bravo! Ai ghicit din ' + incercari + ' încercări.'; clasa = 'win'; gata = true; }
+    afiseaza();
+  };
+  afiseaza();
+}
+
+/* ---------- 3. Piatra, hartie, foarfeca ---------- */
+function rps() {
+  const optiuni = [['🪨', 'Piatră'], ['📄', 'Hârtie'], ['✂️', 'Foarfecă']];
+  let tu = 0, pc = 0, mesaj = 'Alege una dintre cele trei.', clasa = '';
+
+  function afiseaza() {
+    $(`<button class="back" onclick="menu()">← Înapoi la meniu</button>
+    <div class="game"><h2>Piatră, hârtie, foarfecă</h2>
+      <div class="rps">${optiuni.map((o, i) => `<button onclick="window._joaca(${i})">${o[0]}<small>${o[1]}</small></button>`).join('')}</div>
+      <div class="msg ${clasa}">${mesaj}</div>
+      <div class="score">Tu: ${tu} &nbsp;|&nbsp; Calculator: ${pc}</div>
+    </div>`);
+  }
+
+  window._joaca = (i) => {
+    const c = rnd(3);
+    const ale = `Tu: ${optiuni[i][0]} ${optiuni[i][1]} — Calculator: ${optiuni[c][0]} ${optiuni[c][1]}. `;
+    if (i === c) { mesaj = ale + 'Egalitate.'; clasa = ''; }
+    else if ((i + 1) % 3 === c) { mesaj = ale + 'Ai pierdut runda.'; clasa = 'lose'; pc++; }
+    else { mesaj = ale + 'Ai câștigat runda!'; clasa = 'win'; tu++; }
+    afiseaza();
+  };
+  afiseaza();
+}
+
+menu();
+</script>
+</body>
+</html>
